@@ -212,6 +212,7 @@ def match():
             "skills": p.get("skills", []),
             "bio": (p.get("bio") or "")[:400],
             "languages": p.get("languages", []),
+            "available_today": bool(p.get("available_today", False)),
         }
         for p in psychologists
     ]
@@ -219,11 +220,15 @@ def match():
     system_prompt = (
         "You are the caring assistant for The Serene Path, a platform that "
         "connects clients with psychologists. Based on the client's message, "
-        "identify 1 to 3 psychologists from the catalog who are the best fit "
-        "for their situation. Be empathetic but concise (2-3 sentences max). "
+        "rate every psychologist in the catalog on how well they fit the "
+        "client's situation and return the top 3. Be empathetic but concise "
+        "(2-3 sentences max). "
         "Reply STRICTLY in valid JSON with this schema: "
         '{"reply": "<empathetic message for the client>", '
-        '"matches": [{"id": "<psychologist_id>", "reason": "<why this match>"}]}. '
+        '"matches": [{"id": "<psychologist_id>", '
+        '"relevance_score": <integer 0-100>, '
+        '"reason": "<why this match>"}]}. '
+        "relevance_score must reflect clinical fit only, ignoring availability. "
         "Never invent an id that is not in the catalog. "
         "Return nothing else than this JSON."
     )
@@ -250,10 +255,26 @@ def match():
 
     by_id = {p["id"]: p for p in psychologists}
     hydrated = []
-    for m in result.get("matches") or []:
+    for rank, m in enumerate(result.get("matches") or []):
         psy = by_id.get(m.get("id"))
-        if psy:
-            hydrated.append({**psy, "reason": m.get("reason", "")})
+        if not psy:
+            continue
+        score = m.get("relevance_score")
+        try:
+            score = int(score)
+        except (TypeError, ValueError):
+            score = max(0, 100 - rank * 10)
+        hydrated.append({
+            **psy,
+            "reason": m.get("reason", ""),
+            "relevance_score": score,
+        })
+
+    # Primary sort: relevance. Secondary: available today comes first when
+    # two matches are equally relevant.
+    hydrated.sort(
+        key=lambda p: (-p["relevance_score"], 0 if p.get("available_today") else 1)
+    )
 
     return jsonify({"reply": result.get("reply", ""), "matches": hydrated})
 
@@ -286,8 +307,13 @@ def _keyword_match(message, psychologists):
         score = sum(1 for w in msg.split() if len(w) > 3 and w in haystack)
         if score:
             scored.append((score, p))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [{**p, "reason": "Keyword match"} for _, p in scored[:3]]
+    scored.sort(
+        key=lambda x: (-x[0], 0 if x[1].get("available_today") else 1)
+    )
+    return [
+        {**p, "reason": "Keyword match", "relevance_score": score * 10}
+        for score, p in scored[:3]
+    ]
 
 
 if __name__ == "__main__":
