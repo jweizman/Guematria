@@ -25,10 +25,48 @@ pip install -r requirements.txt
 
 ## Configuration
 
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."       # required for AI matching
-export ANTHROPIC_MODEL="claude-opus-4-7"     # optional, defaults to claude-opus-4-7
+Set your Anthropic API key with either a `.env` file (recommended) or
+environment variables.
+
+**Option A — `.env` file** (auto-loaded by python-dotenv):
+
 ```
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-opus-4-7
+```
+
+Copy `.env.example` to `.env` and fill in your key.
+
+**Option B — shell environment variables:**
+
+```bash
+# macOS / Linux
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Windows PowerShell
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+# Windows cmd.exe
+set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Verifying the LLM is active
+
+On startup, the server prints one of:
+
+```
+[The Serene Path] LLM matching enabled via claude-opus-4-7
+[The Serene Path] LLM DISABLED (ANTHROPIC_API_KEY is not set). Using keyword fallback.
+```
+
+You can also hit `GET /api/health` at any time:
+
+```json
+{"anthropic_installed": true, "api_key_set": true, "llm_ready": true, "model": "claude-opus-4-7"}
+```
+
+`POST /api/match` responses include a `"source"` field: `"claude"` when
+the LLM answered, `"fallback"` when the keyword matcher did.
 
 ## Run
 

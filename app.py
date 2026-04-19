@@ -10,6 +10,14 @@ try:
 except ImportError:
     anthropic = None
 
+# Optional: load a local .env file so ANTHROPIC_API_KEY can live there
+# instead of in the shell environment.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass
+
 app = Flask(__name__)
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -20,9 +28,11 @@ CLAUDE_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-7")
 
 def _claude_client():
     api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key or anthropic is None:
-        return None
-    return anthropic.Anthropic(api_key=api_key)
+    if anthropic is None:
+        return None, "anthropic package is not installed (pip install anthropic)"
+    if not api_key:
+        return None, "ANTHROPIC_API_KEY is not set"
+    return anthropic.Anthropic(api_key=api_key), None
 
 
 def load_psychologists():
@@ -166,6 +176,18 @@ def delete_psychologist(pid):
 # ---------------------------------------------------------------------------
 # Specialties (used by the filter chips on the homepage)
 # ---------------------------------------------------------------------------
+@app.route("/api/health", methods=["GET"])
+def health():
+    client, reason = _claude_client()
+    return jsonify({
+        "anthropic_installed": anthropic is not None,
+        "api_key_set": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "llm_ready": client is not None,
+        "llm_reason": reason,
+        "model": CLAUDE_MODEL,
+    })
+
+
 @app.route("/api/specialties", methods=["GET"])
 def list_specialties():
     items = load_psychologists()
@@ -194,14 +216,19 @@ def match():
             "matches": [],
         })
 
-    client = _claude_client()
+    client, reason = _claude_client()
     if client is None:
         matches = _keyword_match(user_message, psychologists)
         reply = (
             "Here are a few practitioners who could be a good fit. "
-            "(Set ANTHROPIC_API_KEY for smarter matching.)"
+            f"(LLM unavailable: {reason}.)"
         )
-        return jsonify({"reply": reply, "matches": matches})
+        return jsonify({
+            "reply": reply,
+            "matches": matches,
+            "source": "fallback",
+            "fallback_reason": reason,
+        })
 
     catalog = [
         {
@@ -251,6 +278,7 @@ def match():
         )
         result = json.loads(_extract_json(text))
     except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Anthropic call failed")
         return jsonify({"error": f"Anthropic request failed: {exc}"}), 502
 
     by_id = {p["id"]: p for p in psychologists}
@@ -276,7 +304,12 @@ def match():
         key=lambda p: (-p["relevance_score"], 0 if p.get("available_today") else 1)
     )
 
-    return jsonify({"reply": result.get("reply", ""), "matches": hydrated})
+    return jsonify({
+        "reply": result.get("reply", ""),
+        "matches": hydrated,
+        "source": "claude",
+        "model": CLAUDE_MODEL,
+    })
 
 
 def _extract_json(text: str) -> str:
@@ -319,4 +352,9 @@ def _keyword_match(message, psychologists):
 if __name__ == "__main__":
     if not DATA_FILE.exists():
         save_psychologists([])
+    _client, _reason = _claude_client()
+    if _client is not None:
+        print(f"[The Serene Path] LLM matching enabled via {CLAUDE_MODEL}")
+    else:
+        print(f"[The Serene Path] LLM DISABLED ({_reason}). Using keyword fallback.")
     app.run(debug=True, host="0.0.0.0", port=5000)
