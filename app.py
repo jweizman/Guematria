@@ -1,87 +1,286 @@
-import re
-import unicodedata
+import json
+import os
+import uuid
+from pathlib import Path
 
-import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, abort, jsonify, render_template, request
+
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 app = Flask(__name__)
 
-SEFARIA_API = "https://www.sefaria.org/api/v3/texts/{ref}"
+DATA_DIR = Path(__file__).parent / "data"
+DATA_FILE = DATA_DIR / "psychologists.json"
 
-GEMATRIA_VALUES = {
-    "א": 1, "ב": 2, "ג": 3, "ד": 4, "ה": 5, "ו": 6, "ז": 7, "ח": 8, "ט": 9,
-    "י": 10, "כ": 20, "ך": 20, "ל": 30, "מ": 40, "ם": 40, "נ": 50, "ן": 50,
-    "ס": 60, "ע": 70, "פ": 80, "ף": 80, "צ": 90, "ץ": 90,
-    "ק": 100, "ר": 200, "ש": 300, "ת": 400,
-}
+CLAUDE_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-7")
 
 
-def strip_nikud(text: str) -> str:
-    normalized = unicodedata.normalize("NFKD", text)
-    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+def _claude_client():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key or anthropic is None:
+        return None
+    return anthropic.Anthropic(api_key=api_key)
 
 
-def clean_html(text: str) -> str:
-    return re.sub(r"<[^>]+>", "", text)
+def load_psychologists():
+    if not DATA_FILE.exists():
+        return []
+    with DATA_FILE.open(encoding="utf-8") as f:
+        return json.load(f)
 
 
-def compute_gematria(word: str) -> int:
-    clean = strip_nikud(word)
-    return sum(GEMATRIA_VALUES.get(ch, 0) for ch in clean)
+def save_psychologists(items):
+    DATA_DIR.mkdir(exist_ok=True)
+    with DATA_FILE.open("w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
 
 
+def normalize(payload, pid=None):
+    return {
+        "id": pid or str(uuid.uuid4()),
+        "name": (payload.get("name") or "").strip(),
+        "title": (payload.get("title") or "").strip(),
+        "specialties": payload.get("specialties") or [],
+        "skills": payload.get("skills") or [],
+        "bio": payload.get("bio") or "",
+        "image_url": payload.get("image_url") or "",
+        "verified": bool(payload.get("verified", False)),
+        "rating": float(payload.get("rating") or 0),
+        "reviews_count": int(payload.get("reviews_count") or 0),
+        "next_available": payload.get("next_available") or "",
+        "available_today": bool(payload.get("available_today", True)),
+        "languages": payload.get("languages") or [],
+        "experience_years": int(payload.get("experience_years") or 0),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Pages
+# ---------------------------------------------------------------------------
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
-@app.route("/api/chapter")
-def chapter():
-    ref = request.args.get("ref", "Genesis.1").strip()
-    try:
-        resp = requests.get(
-            SEFARIA_API.format(ref=ref),
-            params={"version": "hebrew", "return_format": "text_only"},
-            timeout=10,
+@app.route("/chat")
+def chat_page():
+    return render_template("chat.html")
+
+
+@app.route("/admin")
+def admin_page():
+    return render_template("admin.html")
+
+
+# ---------------------------------------------------------------------------
+# Psychologist CRUD + search
+# ---------------------------------------------------------------------------
+@app.route("/api/psychologists", methods=["GET"])
+def list_psychologists():
+    items = load_psychologists()
+    q = (request.args.get("q") or "").strip().lower()
+    specialty = (request.args.get("specialty") or "").strip().lower()
+    available = request.args.get("available_today")
+
+    if q:
+        def matches(p):
+            haystack = " ".join([
+                p.get("name", ""),
+                p.get("title", ""),
+                p.get("bio", ""),
+                " ".join(p.get("specialties", [])),
+                " ".join(p.get("skills", [])),
+            ]).lower()
+            return q in haystack
+
+        items = [p for p in items if matches(p)]
+
+    if specialty and specialty != "all":
+        items = [
+            p for p in items
+            if specialty in [s.lower() for s in p.get("specialties", [])]
+        ]
+
+    if available == "true":
+        items = [p for p in items if p.get("available_today")]
+
+    return jsonify(items)
+
+
+@app.route("/api/psychologists/<pid>", methods=["GET"])
+def get_psychologist(pid):
+    items = load_psychologists()
+    psy = next((p for p in items if p["id"] == pid), None)
+    if not psy:
+        abort(404)
+    return jsonify(psy)
+
+
+@app.route("/api/psychologists", methods=["POST"])
+def create_psychologist():
+    data = request.get_json(silent=True) or {}
+    new = normalize(data)
+    if not new["name"]:
+        return jsonify({"error": "Le nom est obligatoire"}), 400
+    items = load_psychologists()
+    items.append(new)
+    save_psychologists(items)
+    return jsonify(new), 201
+
+
+@app.route("/api/psychologists/<pid>", methods=["PUT"])
+def update_psychologist(pid):
+    data = request.get_json(silent=True) or {}
+    items = load_psychologists()
+    for i, psy in enumerate(items):
+        if psy["id"] == pid:
+            items[i] = normalize({**psy, **data}, pid=pid)
+            save_psychologists(items)
+            return jsonify(items[i])
+    abort(404)
+
+
+@app.route("/api/psychologists/<pid>", methods=["DELETE"])
+def delete_psychologist(pid):
+    items = load_psychologists()
+    remaining = [p for p in items if p["id"] != pid]
+    if len(remaining) == len(items):
+        abort(404)
+    save_psychologists(remaining)
+    return "", 204
+
+
+# ---------------------------------------------------------------------------
+# Specialties (used by the filter chips on the homepage)
+# ---------------------------------------------------------------------------
+@app.route("/api/specialties", methods=["GET"])
+def list_specialties():
+    items = load_psychologists()
+    seen = []
+    for p in items:
+        for s in p.get("specialties", []):
+            if s not in seen:
+                seen.append(s)
+    return jsonify(seen)
+
+
+# ---------------------------------------------------------------------------
+# Matching via OpenAI
+# ---------------------------------------------------------------------------
+@app.route("/api/match", methods=["POST"])
+def match():
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get("message") or "").strip()
+    if not user_message:
+        return jsonify({"error": "Le message est obligatoire"}), 400
+
+    psychologists = load_psychologists()
+    if not psychologists:
+        return jsonify({
+            "reply": "Aucun psychologue n'est encore enregistré.",
+            "matches": [],
+        })
+
+    client = _claude_client()
+    if client is None:
+        matches = _keyword_match(user_message, psychologists)
+        reply = (
+            "Voici quelques praticiens qui pourraient vous correspondre. "
+            "(Configurez ANTHROPIC_API_KEY pour un matching plus fin.)"
         )
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        return jsonify({"error": f"Sefaria request failed: {exc}"}), 502
+        return jsonify({"reply": reply, "matches": matches})
 
-    data = resp.json()
-    versions = data.get("versions") or []
-    if not versions:
-        return jsonify({"error": "No Hebrew text found for this reference."}), 404
-
-    raw_verses = versions[0].get("text") or []
-    verses = []
-    for i, verse in enumerate(raw_verses, start=1):
-        text = clean_html(verse) if isinstance(verse, str) else ""
-        words = [w for w in re.split(r"\s+", text.strip()) if w]
-        verses.append({"number": i, "words": words})
-
-    return jsonify({
-        "ref": data.get("ref", ref),
-        "heRef": data.get("heRef", ""),
-        "verses": verses,
-    })
-
-
-@app.route("/api/gematria")
-def gematria():
-    word = request.args.get("word", "")
-    stripped = strip_nikud(word)
-    letters = [
-        {"letter": ch, "value": GEMATRIA_VALUES[ch]}
-        for ch in stripped if ch in GEMATRIA_VALUES
+    catalog = [
+        {
+            "id": p["id"],
+            "name": p["name"],
+            "title": p.get("title", ""),
+            "specialties": p.get("specialties", []),
+            "skills": p.get("skills", []),
+            "bio": (p.get("bio") or "")[:400],
+            "languages": p.get("languages", []),
+        }
+        for p in psychologists
     ]
-    return jsonify({
-        "word": word,
-        "stripped": stripped,
-        "letters": letters,
-        "total": sum(item["value"] for item in letters),
-    })
+
+    system_prompt = (
+        "Tu es l'assistant bienveillant de The Serene Path, plateforme française "
+        "de mise en relation avec des psychologues. À partir du message du client, "
+        "identifie 1 à 3 psychologues du catalogue qui correspondent le mieux à "
+        "sa problématique. Sois empathique mais concis (2-3 phrases max). "
+        "Réponds STRICTEMENT en JSON valide avec ce schéma : "
+        '{"reply": "<message empathique pour le client>", '
+        '"matches": [{"id": "<id_du_psy>", "reason": "<pourquoi ce match>"}]}. '
+        "N'invente jamais d'identifiant absent du catalogue. "
+        "Ne renvoie rien d'autre que ce JSON."
+    )
+
+    user_prompt = (
+        f"Message du client : {user_message}\n\n"
+        f"Catalogue : {json.dumps(catalog, ensure_ascii=False)}"
+    )
+
+    try:
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=1024,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        text = next(
+            (b.text for b in message.content if getattr(b, "type", "") == "text"),
+            "",
+        )
+        result = json.loads(_extract_json(text))
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": f"Anthropic request failed: {exc}"}), 502
+
+    by_id = {p["id"]: p for p in psychologists}
+    hydrated = []
+    for m in result.get("matches") or []:
+        psy = by_id.get(m.get("id"))
+        if psy:
+            hydrated.append({**psy, "reason": m.get("reason", "")})
+
+    return jsonify({"reply": result.get("reply", ""), "matches": hydrated})
+
+
+def _extract_json(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("```", 2)[1]
+        if text.startswith("json"):
+            text = text[4:]
+        text = text.strip().rstrip("`").strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return text[start:end + 1]
+    return text or "{}"
+
+
+def _keyword_match(message, psychologists):
+    msg = message.lower()
+    scored = []
+    for p in psychologists:
+        haystack = " ".join([
+            p.get("name", ""),
+            p.get("title", ""),
+            " ".join(p.get("specialties", [])),
+            " ".join(p.get("skills", [])),
+            p.get("bio", ""),
+        ]).lower()
+        score = sum(1 for w in msg.split() if len(w) > 3 and w in haystack)
+        if score:
+            scored.append((score, p))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [{**p, "reason": "Correspondance par mots-clés"} for _, p in scored[:3]]
 
 
 if __name__ == "__main__":
+    if not DATA_FILE.exists():
+        save_psychologists([])
     app.run(debug=True, host="0.0.0.0", port=5000)

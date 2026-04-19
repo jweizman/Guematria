@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html class="light" lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>{% block title %}The Serene Path{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Public_Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-error-container": "#6e0a12",
+          "surface-variant": "#e3e3dc",
+          "on-error": "#fff7f6",
+          "tertiary": "#7b573f",
+          "tertiary-fixed": "#fecdaf",
+          "on-primary-container": "#295959",
+          "secondary-container": "#c9ecbe",
+          "surface-dim": "#dadad4",
+          "outline": "#7a7b76",
+          "inverse-on-surface": "#9e9d99",
+          "error-container": "#fa746f",
+          "secondary": "#486743",
+          "primary-container": "#baeceb",
+          "on-primary-fixed": "#134647",
+          "on-background": "#31332f",
+          "surface-tint": "#376767",
+          "inverse-surface": "#0e0e0c",
+          "outline-variant": "#b2b2ac",
+          "background": "#fbf9f5",
+          "on-secondary-fixed-variant": "#45633f",
+          "surface-container-lowest": "#ffffff",
+          "on-primary": "#e0fffe",
+          "on-secondary-container": "#3b5936",
+          "inverse-primary": "#cbfdfd",
+          "tertiary-container": "#fecdaf",
+          "error": "#a83836",
+          "secondary-fixed-dim": "#bbdeb1",
+          "primary-fixed": "#baeceb",
+          "error-dim": "#67040d",
+          "surface-bright": "#fbf9f5",
+          "on-secondary-fixed": "#294625",
+          "surface-container-high": "#e9e8e3",
+          "on-primary-fixed-variant": "#346363",
+          "tertiary-fixed-dim": "#efc0a2",
+          "on-surface": "#31332f",
+          "on-secondary": "#eaffe1",
+          "on-tertiary-fixed-variant": "#6f4c36",
+          "primary": "#376767",
+          "secondary-dim": "#3c5a37",
+          "on-surface-variant": "#5e605b",
+          "surface": "#fbf9f5",
+          "on-tertiary-container": "#65432d",
+          "surface-container": "#efeee8",
+          "secondary-fixed": "#c9ecbe",
+          "surface-container-low": "#f5f4ef",
+          "on-tertiary-fixed": "#4f311c",
+          "surface-container-highest": "#e3e3dc",
+          "on-tertiary": "#fff7f4",
+          "primary-dim": "#2b5a5b",
+          "primary-fixed-dim": "#addddd",
+          "tertiary-dim": "#6e4b34",
+        },
+        borderRadius: {
+          DEFAULT: "0.25rem",
+          lg: "0.5rem",
+          xl: "0.75rem",
+          full: "9999px",
+        },
+        fontFamily: {
+          headline: ["Manrope"],
+          body: ["Public Sans"],
+          label: ["Public Sans"],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  body { min-height: max(884px, 100dvh); }
+</style>
+{% block head_extra %}{% endblock %}
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen">
+<header class="fixed top-0 w-full z-50 bg-[#fbf9f5]/80 backdrop-blur-xl">
+  <div class="flex justify-between items-center px-6 h-16 w-full max-w-lg mx-auto">
+    <div class="flex items-center gap-4">
+      <a href="{{ url_for('admin_page') }}" class="material-symbols-outlined text-[#376767] cursor-pointer">menu</a>
+      <h1 class="font-headline font-bold tracking-tight text-xl text-[#31332f]">The Serene Path</h1>
+    </div>
+    <a href="{{ url_for('chat_page') }}" class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center">
+      <span class="material-symbols-outlined text-primary">chat</span>
+    </a>
+  </div>
+</header>
+
+<main class="pt-20 pb-32 max-w-lg mx-auto px-6 space-y-8">
+  {% block main %}{% endblock %}
+</main>
+
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#fbf9f5]/80 backdrop-blur-xl border-t border-[#b2b2ac]/15 shadow-[0_-10px_30px_rgba(49,51,47,0.04)]">
+  <div class="flex justify-around items-center h-20 w-full max-w-lg mx-auto px-4">
+    <a href="{{ url_for('index') }}" class="flex flex-col items-center justify-center {% if active == 'home' %}bg-[#376767]/10 text-[#376767]{% else %}text-[#31332f]/50 hover:text-[#376767]{% endif %} rounded-2xl px-5 py-2 active:scale-90 transition-transform cursor-pointer">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' {% if active == 'home' %}1{% else %}0{% endif %};">home_health</span>
+      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Accueil</span>
+    </a>
+    <a href="{{ url_for('chat_page') }}" class="flex flex-col items-center justify-center {% if active == 'chat' %}bg-[#376767]/10 text-[#376767]{% else %}text-[#31332f]/50 hover:text-[#376767]{% endif %} rounded-2xl px-5 py-2 active:scale-90 transition-transform cursor-pointer">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' {% if active == 'chat' %}1{% else %}0{% endif %};">forum</span>
+      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Échanger</span>
+    </a>
+    <a href="{{ url_for('admin_page') }}" class="flex flex-col items-center justify-center {% if active == 'admin' %}bg-[#376767]/10 text-[#376767]{% else %}text-[#31332f]/50 hover:text-[#376767]{% endif %} rounded-2xl px-5 py-2 active:scale-90 transition-transform cursor-pointer">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' {% if active == 'admin' %}1{% else %}0{% endif %};">manage_accounts</span>
+      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Gestion</span>
+    </a>
+  </div>
+</nav>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

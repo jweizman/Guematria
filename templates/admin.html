@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% set active = 'admin' %}
+{% block title %}The Serene Path - Gestion{% endblock %}
+
+{% block main %}
+<section class="space-y-2">
+  <h2 class="font-headline font-bold text-2xl text-on-surface">Gestion des praticiens</h2>
+  <p class="text-on-surface-variant text-sm leading-relaxed">
+    Ajoutez, modifiez ou supprimez les psychologues présentés sur la plateforme.
+  </p>
+</section>
+
+<section>
+  <button
+    id="new-btn"
+    class="w-full bg-primary text-on-primary p-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+  >
+    <span class="material-symbols-outlined">add</span>
+    <span class="font-headline font-bold">Nouveau psychologue</span>
+  </button>
+</section>
+
+<section id="admin-list" class="space-y-3"></section>
+
+<!-- Modal form -->
+<div id="form-modal" class="fixed inset-0 z-[60] bg-on-surface/40 backdrop-blur-sm hidden items-end sm:items-center justify-center px-4">
+  <div class="bg-surface-container-lowest w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
+    <div class="flex items-center justify-between">
+      <h3 id="form-title" class="font-headline font-bold text-xl text-on-surface">Nouveau praticien</h3>
+      <button id="close-form" class="material-symbols-outlined text-on-surface-variant cursor-pointer">close</button>
+    </div>
+    <form id="psy-form" class="space-y-3">
+      <input type="hidden" name="id" />
+      {% set field_classes = "w-full p-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/40 text-on-surface" %}
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Nom</span>
+        <input name="name" required class="{{ field_classes }} mt-1" />
+      </label>
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Titre / Spécialisation principale</span>
+        <input name="title" class="{{ field_classes }} mt-1" />
+      </label>
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Spécialités (séparées par des virgules)</span>
+        <input name="specialties" class="{{ field_classes }} mt-1" placeholder="Stress, Anxiété, Burnout" />
+      </label>
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Compétences / Approches</span>
+        <input name="skills" class="{{ field_classes }} mt-1" placeholder="TCC, Pleine conscience, EMDR" />
+      </label>
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Bio</span>
+        <textarea name="bio" rows="4" class="{{ field_classes }} mt-1"></textarea>
+      </label>
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">URL photo</span>
+        <input name="image_url" class="{{ field_classes }} mt-1" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Note (0-5)</span>
+          <input name="rating" type="number" step="0.1" min="0" max="5" class="{{ field_classes }} mt-1" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Avis</span>
+          <input name="reviews_count" type="number" min="0" class="{{ field_classes }} mt-1" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Prochain créneau</span>
+          <input name="next_available" class="{{ field_classes }} mt-1" placeholder="14:00" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Années d'expérience</span>
+          <input name="experience_years" type="number" min="0" class="{{ field_classes }} mt-1" />
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Langues (séparées par des virgules)</span>
+        <input name="languages" class="{{ field_classes }} mt-1" placeholder="Français, Anglais" />
+      </label>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="verified" class="rounded text-primary" />
+          <span class="text-sm">Vérifié</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="available_today" class="rounded text-primary" checked />
+          <span class="text-sm">Disponible aujourd'hui</span>
+        </label>
+      </div>
+      <button type="submit" class="w-full bg-primary text-on-primary p-3 rounded-xl font-headline font-bold mt-2">Enregistrer</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const listRoot = document.getElementById("admin-list");
+  const modal = document.getElementById("form-modal");
+  const form = document.getElementById("psy-form");
+  const formTitle = document.getElementById("form-title");
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
+  }
+
+  async function loadList() {
+    const r = await fetch("/api/psychologists");
+    const items = await r.json();
+    if (!items.length) {
+      listRoot.innerHTML =
+        '<p class="text-sm text-on-surface-variant">Aucun praticien enregistré.</p>';
+      return;
+    }
+    listRoot.innerHTML = items
+      .map(
+        (p) => `
+      <div class="bg-surface-container-lowest p-4 rounded-xl flex gap-3 items-center">
+        <div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container-low flex items-center justify-center flex-shrink-0">
+          ${p.image_url
+            ? `<img src="${escapeHtml(p.image_url)}" class="w-full h-full object-cover" />`
+            : `<span class="material-symbols-outlined text-primary/60">person</span>`}
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="font-headline font-bold text-on-surface truncate">${escapeHtml(p.name)}</h4>
+          <p class="text-on-surface-variant text-xs truncate">${escapeHtml(p.title || "")}</p>
+          <p class="text-on-surface-variant/70 text-[11px] truncate">${(p.specialties || []).map(escapeHtml).join(" · ")}</p>
+        </div>
+        <button data-edit="${p.id}" class="material-symbols-outlined text-primary p-2">edit</button>
+        <button data-del="${p.id}" class="material-symbols-outlined text-error p-2">delete</button>
+      </div>`
+      )
+      .join("");
+
+    listRoot.querySelectorAll("[data-edit]").forEach((b) =>
+      b.addEventListener("click", () => openEdit(b.dataset.edit))
+    );
+    listRoot.querySelectorAll("[data-del]").forEach((b) =>
+      b.addEventListener("click", () => removeOne(b.dataset.del))
+    );
+  }
+
+  function openModal(title) {
+    formTitle.textContent = title;
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  }
+
+  function closeModal() {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    form.reset();
+    form.elements["id"].value = "";
+  }
+
+  document.getElementById("new-btn").addEventListener("click", () => {
+    form.reset();
+    form.elements["id"].value = "";
+    form.elements["available_today"].checked = true;
+    openModal("Nouveau praticien");
+  });
+
+  document.getElementById("close-form").addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  async function openEdit(id) {
+    const r = await fetch("/api/psychologists/" + id);
+    if (!r.ok) return;
+    const p = await r.json();
+    form.elements["id"].value = p.id;
+    form.elements["name"].value = p.name || "";
+    form.elements["title"].value = p.title || "";
+    form.elements["specialties"].value = (p.specialties || []).join(", ");
+    form.elements["skills"].value = (p.skills || []).join(", ");
+    form.elements["bio"].value = p.bio || "";
+    form.elements["image_url"].value = p.image_url || "";
+    form.elements["rating"].value = p.rating || "";
+    form.elements["reviews_count"].value = p.reviews_count || "";
+    form.elements["next_available"].value = p.next_available || "";
+    form.elements["experience_years"].value = p.experience_years || "";
+    form.elements["languages"].value = (p.languages || []).join(", ");
+    form.elements["verified"].checked = !!p.verified;
+    form.elements["available_today"].checked = !!p.available_today;
+    openModal("Modifier le praticien");
+  }
+
+  async function removeOne(id) {
+    if (!confirm("Supprimer ce praticien ?")) return;
+    await fetch("/api/psychologists/" + id, { method: "DELETE" });
+    loadList();
+  }
+
+  function csvList(value) {
+    return (value || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = form.elements["id"].value;
+    const payload = {
+      name: form.elements["name"].value.trim(),
+      title: form.elements["title"].value.trim(),
+      specialties: csvList(form.elements["specialties"].value),
+      skills: csvList(form.elements["skills"].value),
+      bio: form.elements["bio"].value.trim(),
+      image_url: form.elements["image_url"].value.trim(),
+      rating: parseFloat(form.elements["rating"].value) || 0,
+      reviews_count: parseInt(form.elements["reviews_count"].value) || 0,
+      next_available: form.elements["next_available"].value.trim(),
+      experience_years: parseInt(form.elements["experience_years"].value) || 0,
+      languages: csvList(form.elements["languages"].value),
+      verified: form.elements["verified"].checked,
+      available_today: form.elements["available_today"].checked,
+    };
+    const url = id ? "/api/psychologists/" + id : "/api/psychologists";
+    const method = id ? "PUT" : "POST";
+    const r = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      alert("Erreur : " + (err.error || r.statusText));
+      return;
+    }
+    closeModal();
+    loadList();
+  });
+
+  loadList();
+</script>
+{% endblock %}

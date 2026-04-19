@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% set active = 'chat' %}
+{% block title %}The Serene Path - Échanger{% endblock %}
+
+{% block main %}
+<section class="space-y-3">
+  <h2 class="font-headline font-bold text-2xl text-on-surface">Parlez-nous de vous</h2>
+  <p class="text-on-surface-variant text-sm leading-relaxed">
+    Décrivez ce que vous traversez en quelques phrases. Nous vous orientons vers les
+    psychologues les plus à même de vous accompagner.
+  </p>
+</section>
+
+<section id="messages" class="space-y-3"></section>
+
+<section>
+  <form id="chat-form" class="flex items-end gap-2">
+    <textarea
+      id="chat-input"
+      rows="2"
+      placeholder="Je me sens stressé(e) depuis quelques semaines…"
+      class="flex-1 p-4 bg-surface-container-highest border-none rounded-xl focus:ring-2 focus:ring-primary/40 placeholder:text-on-surface-variant/50 text-on-surface resize-none"
+    ></textarea>
+    <button
+      type="submit"
+      class="h-14 w-14 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-[0_10px_30px_rgba(49,51,47,0.06)] active:scale-95 transition-transform"
+    >
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+    </button>
+  </form>
+</section>
+
+<section id="matches" class="space-y-4"></section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const messagesRoot = document.getElementById("messages");
+  const matchesRoot = document.getElementById("matches");
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("chat-input");
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
+  }
+
+  function appendBubble(role, text) {
+    const div = document.createElement("div");
+    div.className =
+      role === "user"
+        ? "max-w-[85%] ml-auto bg-primary text-on-primary px-4 py-3 rounded-xl rounded-br-sm"
+        : "max-w-[85%] mr-auto bg-surface-container-low text-on-surface px-4 py-3 rounded-xl rounded-bl-sm";
+    div.textContent = text;
+    messagesRoot.appendChild(div);
+    div.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  function renderMatches(items) {
+    matchesRoot.innerHTML = "";
+    if (!items.length) return;
+    const heading = document.createElement("h3");
+    heading.className = "font-headline font-bold text-xl text-on-surface mt-4";
+    heading.textContent = "Praticiens recommandés";
+    matchesRoot.appendChild(heading);
+    items.forEach((p) => {
+      const card = document.createElement("div");
+      card.className =
+        "bg-surface-container-lowest p-5 rounded-xl flex gap-5 items-start relative overflow-hidden";
+      card.innerHTML = `
+        <div class="w-16 h-16 rounded-2xl overflow-hidden bg-surface-container-low flex-shrink-0 flex items-center justify-center">
+          ${p.image_url
+            ? `<img alt="${escapeHtml(p.name)}" class="w-full h-full object-cover" src="${escapeHtml(p.image_url)}" />`
+            : `<span class="material-symbols-outlined text-3xl text-primary/60">person</span>`}
+        </div>
+        <div class="flex-1 space-y-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h4 class="font-headline font-bold text-base text-on-surface">${escapeHtml(p.name)}</h4>
+            ${p.verified
+              ? `<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>VÉRIFIÉ
+                </span>`
+              : ""}
+          </div>
+          <p class="text-on-surface-variant text-xs">${escapeHtml(p.title || "")}</p>
+          ${p.reason
+            ? `<p class="text-on-surface text-sm mt-2 leading-relaxed">${escapeHtml(p.reason)}</p>`
+            : ""}
+          ${p.next_available
+            ? `<p class="flex items-center gap-1 text-xs text-primary mt-2">
+                <span class="material-symbols-outlined text-sm">schedule</span> Prochain créneau : ${escapeHtml(p.next_available)}
+              </p>`
+            : ""}
+        </div>`;
+      matchesRoot.appendChild(card);
+    });
+    matchesRoot.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    appendBubble("user", text);
+    input.value = "";
+
+    const thinking = document.createElement("div");
+    thinking.className =
+      "max-w-[85%] mr-auto bg-surface-container-low text-on-surface-variant px-4 py-3 rounded-xl rounded-bl-sm italic";
+    thinking.textContent = "Recherche du praticien le plus adapté…";
+    messagesRoot.appendChild(thinking);
+
+    try {
+      const r = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await r.json();
+      thinking.remove();
+      if (data.error) {
+        appendBubble("assistant", "Désolé, une erreur est survenue : " + data.error);
+        return;
+      }
+      appendBubble("assistant", data.reply || "Voici quelques suggestions.");
+      renderMatches(data.matches || []);
+    } catch (err) {
+      thinking.remove();
+      appendBubble("assistant", "Erreur réseau : " + err.message);
+    }
+  });
+</script>
+{% endblock %}

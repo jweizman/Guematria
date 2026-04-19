@@ -1,12 +1,33 @@
-# Guematria - Bible Hébraïque
+# The Serene Path
 
-Application Flask qui charge un chapitre de la Bible en hébreu via l'API Sefaria
-et calcule la guematria (valeur numérique) de chaque mot au clic.
+Plateforme Flask de mise en relation avec des psychologues. Le site présente
+une fiche par praticien avec ses spécialités et compétences, propose une
+recherche/filtrage côté client, et un chat qui utilise l'API Anthropic Claude
+pour orienter le visiteur vers le psychologue le plus pertinent.
+
+## Architecture
+
+- **Frontend** : trois pages (Tailwind via CDN, design Material You)
+  - `/` — accueil avec recherche, filtres par spécialité et liste des
+    praticiens disponibles aujourd'hui.
+  - `/chat` — chat client : décrivez votre situation, l'IA analyse et propose
+    1 à 3 praticiens du catalogue.
+  - `/admin` — gestion CRUD des fiches psychologues.
+- **Backend** : Flask + stockage JSON simple (`data/psychologists.json`).
+- **IA** : Anthropic Claude (`claude-opus-4-7` par défaut). À défaut de clé,
+  un matching par mots-clés est utilisé en repli.
 
 ## Installation
 
 ```bash
 pip install -r requirements.txt
+```
+
+## Configuration
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."     # requis pour le matching IA
+export ANTHROPIC_MODEL="claude-opus-4-7"   # optionnel, défaut: claude-opus-4-7
 ```
 
 ## Lancement
@@ -17,15 +38,19 @@ python app.py
 
 Puis ouvrir http://localhost:5000
 
-## Utilisation
+## API
 
-- Entrer une référence au format Sefaria (ex: `Genesis.1`, `Exodus.3`, `Psalms.23`)
-- Cliquer "Charger"
-- Cliquer sur n'importe quel mot hébreu pour voir sa guematria détaillée
-  (lettre par lettre + total)
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | `/api/psychologists` | Liste, paramètres : `q`, `specialty`, `available_today` |
+| GET | `/api/psychologists/<id>` | Fiche d'un praticien |
+| POST | `/api/psychologists` | Création |
+| PUT | `/api/psychologists/<id>` | Mise à jour |
+| DELETE | `/api/psychologists/<id>` | Suppression |
+| GET | `/api/specialties` | Liste des spécialités présentes |
+| POST | `/api/match` | Body : `{"message": "..."}`. Retourne `{reply, matches[]}`. |
 
-## Valeurs de guematria
+## Données
 
-Calcul standard (mispar hechrachi) : les lettres finales gardent la valeur
-de leur forme normale (ך=20, ם=40, ן=50, ף=80, ץ=90). Les signes de
-vocalisation (nikud) et de cantillation (teamim) sont ignorés.
+Les psychologues sont persistés dans `data/psychologists.json`. Quatre fiches
+exemple sont fournies à l'installation.

@@ -1,155 +1,171 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Guematria - Bible Hébraïque</title>
-    <style>
-        body {
-            font-family: Georgia, serif;
-            max-width: 900px;
-            margin: 2em auto;
-            padding: 0 1em;
-            background: #fdf6e3;
-            color: #333;
-        }
-        h1 { text-align: center; color: #586e75; }
-        .controls {
-            display: flex;
-            gap: 0.5em;
-            margin-bottom: 1.5em;
-            justify-content: center;
-        }
-        input, button {
-            font-size: 1em;
-            padding: 0.5em 0.8em;
-            border: 1px solid #93a1a1;
-            border-radius: 4px;
-        }
-        button {
-            background: #268bd2;
-            color: white;
-            cursor: pointer;
-            border: none;
-        }
-        button:hover { background: #2076b8; }
-        .verse {
-            direction: rtl;
-            text-align: right;
-            font-size: 1.6em;
-            line-height: 2;
-            margin: 0.5em 0;
-        }
-        .verse-num {
-            color: #b58900;
-            font-size: 0.7em;
-            margin-left: 0.5em;
-            vertical-align: super;
-        }
-        .word {
-            cursor: pointer;
-            padding: 0 0.1em;
-            border-radius: 3px;
-            transition: background 0.15s;
-        }
-        .word:hover { background: #eee8d5; }
-        .word.active { background: #b58900; color: white; }
-        #result {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            margin-bottom: 1.5em;
-            padding: 1em;
-            background: white;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            min-height: 3em;
-        }
-        .total {
-            font-size: 2em;
-            color: #cb4b16;
-            font-weight: bold;
-        }
-        .letters {
-            direction: rtl;
-            font-size: 1.3em;
-            margin-top: 0.5em;
-        }
-        .letter-box {
-            display: inline-block;
-            margin: 0.2em;
-            padding: 0.3em 0.5em;
-            border: 1px solid #93a1a1;
-            border-radius: 4px;
-            background: #eee8d5;
-        }
-        .letter-box small { display: block; font-size: 0.6em; color: #586e75; }
-        .error { color: #dc322f; }
-    </style>
-</head>
-<body>
-    <h1>Guematria - Bible Hébraïque</h1>
+{% extends "base.html" %}
+{% set active = 'home' %}
+{% block title %}The Serene Path - Accueil{% endblock %}
 
-    <div class="controls">
-        <input id="ref" type="text" value="Genesis.1" placeholder="ex: Genesis.1, Exodus.3, Psalms.23">
-        <button onclick="loadChapter()">Charger</button>
+{% block main %}
+<!-- Emergency Section -->
+<section class="mt-4">
+  <a href="{{ url_for('chat_page') }}" class="block">
+    <button class="w-full bg-error-container text-on-error-container p-5 rounded-xl flex items-center justify-between shadow-[0_10px_30px_rgba(49,51,47,0.06)] active:scale-95 transition-transform duration-200">
+      <div class="flex flex-col items-start text-left">
+        <span class="font-headline font-bold text-lg">Besoin d'aide maintenant ?</span>
+        <span class="font-body text-sm opacity-90">Consultation immédiate disponible</span>
+      </div>
+      <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">emergency_home</span>
+    </button>
+  </a>
+</section>
+
+<!-- Search -->
+<section class="space-y-4">
+  <div class="relative">
+    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+      <span class="material-symbols-outlined text-on-surface-variant/60">search</span>
     </div>
+    <input id="search-input" class="w-full h-14 pl-12 pr-4 bg-surface-container-highest border-none rounded-xl focus:ring-2 focus:ring-primary/40 placeholder:text-on-surface-variant/50 text-on-surface transition-all" placeholder="Comment vous sentez-vous ?" type="text" />
+  </div>
+</section>
 
-    <div id="result">Cliquez sur un mot pour voir sa guematria.</div>
-    <div id="chapter"></div>
+<!-- Specialty filters -->
+<section>
+  <div id="filters" class="flex overflow-x-auto gap-3 no-scrollbar py-2"></div>
+</section>
 
-    <script>
-        async function loadChapter() {
-            const ref = document.getElementById('ref').value.trim();
-            const container = document.getElementById('chapter');
-            container.innerHTML = 'Chargement...';
-            try {
-                const res = await fetch('/api/chapter?ref=' + encodeURIComponent(ref));
-                const data = await res.json();
-                if (data.error) {
-                    container.innerHTML = '<p class="error">' + data.error + '</p>';
-                    return;
-                }
-                container.innerHTML = '<h2 style="direction:rtl">' + (data.heRef || data.ref) + '</h2>';
-                data.verses.forEach(verse => {
-                    const div = document.createElement('div');
-                    div.className = 'verse';
-                    const num = document.createElement('span');
-                    num.className = 'verse-num';
-                    num.textContent = verse.number;
-                    div.appendChild(num);
-                    verse.words.forEach(w => {
-                        const span = document.createElement('span');
-                        span.className = 'word';
-                        span.textContent = w + ' ';
-                        span.onclick = () => showGematria(w, span);
-                        div.appendChild(span);
-                    });
-                    container.appendChild(div);
-                });
-            } catch (e) {
-                container.innerHTML = '<p class="error">Erreur: ' + e.message + '</p>';
-            }
-        }
+<!-- Featured Psychologists -->
+<section class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h2 class="font-headline font-bold text-2xl text-on-surface">Disponibles aujourd'hui</h2>
+    <a href="#" id="toggle-all" class="text-primary font-label text-sm font-semibold cursor-pointer">Voir tout</a>
+  </div>
+  <div id="psy-list" class="grid grid-cols-1 gap-4">
+    <p class="text-sm text-on-surface-variant">Chargement…</p>
+  </div>
+</section>
 
-        async function showGematria(word, el) {
-            document.querySelectorAll('.word.active').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
+<!-- Tip of the day -->
+<section class="bg-surface-container-low p-8 rounded-2xl relative overflow-hidden border-none">
+  <div class="absolute top-4 right-4 text-primary-fixed-dim/20 scale-150">
+    <span class="material-symbols-outlined text-6xl">lightbulb</span>
+  </div>
+  <div class="relative z-10 space-y-3">
+    <span class="text-tertiary font-label font-bold text-xs tracking-widest uppercase">Le saviez-vous ?</span>
+    <h4 class="font-headline font-bold text-xl text-on-surface leading-tight">La respiration carrée apaise votre système nerveux en 60 secondes.</h4>
+    <p class="text-on-surface-variant text-sm leading-relaxed max-w-[85%]">Inspirez 4 secondes, retenez 4 secondes, expirez 4 secondes, retenez 4 secondes. Répétez 3 fois.</p>
+    <a href="{{ url_for('chat_page') }}" class="mt-2 text-primary font-bold text-sm flex items-center gap-2 group">
+      Essayer maintenant
+      <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+    </a>
+  </div>
+</section>
+{% endblock %}
 
-            const res = await fetch('/api/gematria?word=' + encodeURIComponent(word));
-            const data = await res.json();
-            const result = document.getElementById('result');
+{% block scripts %}
+<script>
+  let activeFilter = "all";
+  let onlyAvailable = true;
+  let allSpecialties = ["all"];
 
-            const letters = data.letters.map(l =>
-                '<span class="letter-box">' + l.letter + '<small>' + l.value + '</small></span>'
-            ).join('');
+  async function loadSpecialties() {
+    const r = await fetch("/api/specialties");
+    const data = await r.json();
+    allSpecialties = ["all", ...data];
+    renderFilters();
+  }
 
-            result.innerHTML =
-                '<div style="direction:rtl;font-size:1.5em">' + data.word + '</div>' +
-                '<div class="letters">' + letters + '</div>' +
-                '<div>Total: <span class="total">' + data.total + '</span></div>';
-        }
+  function renderFilters() {
+    const root = document.getElementById("filters");
+    root.innerHTML = "";
+    allSpecialties.forEach((label) => {
+      const btn = document.createElement("button");
+      const isActive = label === activeFilter;
+      btn.className =
+        "flex-none px-6 py-3 rounded-full font-label font-medium transition-colors " +
+        (isActive
+          ? "bg-primary text-on-primary"
+          : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest");
+      btn.textContent = label === "all" ? "Tout" : label;
+      btn.onclick = () => {
+        activeFilter = label;
+        renderFilters();
+        loadPsychologists();
+      };
+      root.appendChild(btn);
+    });
+  }
 
-        loadChapter();
-    </script>
-</body>
-</html>
+  async function loadPsychologists() {
+    const params = new URLSearchParams();
+    const q = document.getElementById("search-input").value.trim();
+    if (q) params.set("q", q);
+    if (activeFilter && activeFilter !== "all") params.set("specialty", activeFilter);
+    if (onlyAvailable) params.set("available_today", "true");
+    const r = await fetch("/api/psychologists?" + params.toString());
+    const data = await r.json();
+    renderList(data);
+  }
+
+  function renderList(items) {
+    const root = document.getElementById("psy-list");
+    if (!items.length) {
+      root.innerHTML = '<p class="text-sm text-on-surface-variant">Aucun praticien trouvé.</p>';
+      return;
+    }
+    root.innerHTML = items
+      .map(
+        (p) => `
+      <div class="bg-surface-container-lowest p-5 rounded-xl flex gap-5 items-center relative overflow-hidden group">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+        <div class="w-20 h-20 rounded-2xl overflow-hidden bg-surface-container-low flex-shrink-0 flex items-center justify-center">
+          ${p.image_url
+            ? `<img alt="${escapeHtml(p.name)}" class="w-full h-full object-cover" src="${escapeHtml(p.image_url)}" />`
+            : `<span class="material-symbols-outlined text-4xl text-primary/60">person</span>`}
+        </div>
+        <div class="flex-1 space-y-1 relative">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="font-headline font-bold text-lg text-on-surface">${escapeHtml(p.name)}</h3>
+            ${p.verified
+              ? `<div class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>VÉRIFIÉ
+                </div>`
+              : ""}
+          </div>
+          <p class="text-on-surface-variant text-sm font-body">${escapeHtml(p.title || "")}</p>
+          <div class="flex items-center gap-4 mt-2 flex-wrap">
+            ${p.rating
+              ? `<span class="flex items-center gap-1 text-xs text-on-surface-variant">
+                  <span class="material-symbols-outlined text-sm text-tertiary">star</span> ${p.rating} (${p.reviews_count || 0})
+                </span>`
+              : ""}
+            ${p.next_available
+              ? `<span class="flex items-center gap-1 text-xs text-on-surface-variant">
+                  <span class="material-symbols-outlined text-sm text-primary">schedule</span> ${escapeHtml(p.next_available)}
+                </span>`
+              : ""}
+          </div>
+        </div>
+      </div>`
+      )
+      .join("");
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
+  }
+
+  document.getElementById("search-input").addEventListener("input", () => {
+    clearTimeout(window._searchTimer);
+    window._searchTimer = setTimeout(loadPsychologists, 250);
+  });
+
+  document.getElementById("toggle-all").addEventListener("click", (e) => {
+    e.preventDefault();
+    onlyAvailable = !onlyAvailable;
+    e.target.textContent = onlyAvailable ? "Voir tout" : "Disponibles seulement";
+    loadPsychologists();
+  });
+
+  loadSpecialties().then(loadPsychologists);
+</script>
+{% endblock %}
