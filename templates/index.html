@@ -54,11 +54,14 @@
         .word:hover { background: #eee8d5; }
         .word.active { background: #b58900; color: white; }
         #result {
-            margin-top: 1.5em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            margin-bottom: 1.5em;
             padding: 1em;
             background: white;
             border-radius: 6px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             min-height: 3em;
         }
         .total {
@@ -91,8 +94,8 @@
         <button onclick="loadChapter()">Charger</button>
     </div>
 
-    <div id="chapter"></div>
     <div id="result">Cliquez sur un mot pour voir sa guematria.</div>
+    <div id="chapter"></div>
 
     <script>
         async function loadChapter() {
