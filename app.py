@@ -28,14 +28,24 @@ def _claude_client():
 def load_psychologists():
     if not DATA_FILE.exists():
         return []
-    with DATA_FILE.open(encoding="utf-8") as f:
-        return json.load(f)
+    with DATA_FILE.open(encoding="utf-8-sig") as f:
+        text = f.read().strip()
+    if not text:
+        return []
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        app.logger.error("psychologists.json is corrupt (%s); returning empty list", exc)
+        return []
+    return data if isinstance(data, list) else []
 
 
 def save_psychologists(items):
     DATA_DIR.mkdir(exist_ok=True)
-    with DATA_FILE.open("w", encoding="utf-8") as f:
+    tmp = DATA_FILE.with_suffix(".json.tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         json.dump(items, f, ensure_ascii=False, indent=2)
+    tmp.replace(DATA_FILE)
 
 
 def normalize(payload, pid=None):
