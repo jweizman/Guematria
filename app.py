@@ -124,7 +124,7 @@ def create_psychologist():
     data = request.get_json(silent=True) or {}
     new = normalize(data)
     if not new["name"]:
-        return jsonify({"error": "Le nom est obligatoire"}), 400
+        return jsonify({"error": "Name is required"}), 400
     items = load_psychologists()
     items.append(new)
     save_psychologists(items)
@@ -175,12 +175,12 @@ def match():
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
     if not user_message:
-        return jsonify({"error": "Le message est obligatoire"}), 400
+        return jsonify({"error": "Message is required"}), 400
 
     psychologists = load_psychologists()
     if not psychologists:
         return jsonify({
-            "reply": "Aucun psychologue n'est encore enregistré.",
+            "reply": "No psychologist has been registered yet.",
             "matches": [],
         })
 
@@ -188,8 +188,8 @@ def match():
     if client is None:
         matches = _keyword_match(user_message, psychologists)
         reply = (
-            "Voici quelques praticiens qui pourraient vous correspondre. "
-            "(Configurez ANTHROPIC_API_KEY pour un matching plus fin.)"
+            "Here are a few practitioners who could be a good fit. "
+            "(Set ANTHROPIC_API_KEY for smarter matching.)"
         )
         return jsonify({"reply": reply, "matches": matches})
 
@@ -207,20 +207,20 @@ def match():
     ]
 
     system_prompt = (
-        "Tu es l'assistant bienveillant de The Serene Path, plateforme française "
-        "de mise en relation avec des psychologues. À partir du message du client, "
-        "identifie 1 à 3 psychologues du catalogue qui correspondent le mieux à "
-        "sa problématique. Sois empathique mais concis (2-3 phrases max). "
-        "Réponds STRICTEMENT en JSON valide avec ce schéma : "
-        '{"reply": "<message empathique pour le client>", '
-        '"matches": [{"id": "<id_du_psy>", "reason": "<pourquoi ce match>"}]}. '
-        "N'invente jamais d'identifiant absent du catalogue. "
-        "Ne renvoie rien d'autre que ce JSON."
+        "You are the caring assistant for The Serene Path, a platform that "
+        "connects clients with psychologists. Based on the client's message, "
+        "identify 1 to 3 psychologists from the catalog who are the best fit "
+        "for their situation. Be empathetic but concise (2-3 sentences max). "
+        "Reply STRICTLY in valid JSON with this schema: "
+        '{"reply": "<empathetic message for the client>", '
+        '"matches": [{"id": "<psychologist_id>", "reason": "<why this match>"}]}. '
+        "Never invent an id that is not in the catalog. "
+        "Return nothing else than this JSON."
     )
 
     user_prompt = (
-        f"Message du client : {user_message}\n\n"
-        f"Catalogue : {json.dumps(catalog, ensure_ascii=False)}"
+        f"Client message: {user_message}\n\n"
+        f"Catalog: {json.dumps(catalog, ensure_ascii=False)}"
     )
 
     try:
@@ -277,7 +277,7 @@ def _keyword_match(message, psychologists):
         if score:
             scored.append((score, p))
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [{**p, "reason": "Correspondance par mots-clés"} for _, p in scored[:3]]
+    return [{**p, "reason": "Keyword match"} for _, p in scored[:3]]
 
 
 if __name__ == "__main__":

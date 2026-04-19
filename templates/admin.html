@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% set active = 'admin' %}
-{% block title %}The Serene Path - Gestion{% endblock %}
+{% block title %}The Serene Path - Admin{% endblock %}
 
 {% block main %}
 <section class="space-y-2">
-  <h2 class="font-headline font-bold text-2xl text-on-surface">Gestion des praticiens</h2>
+  <h2 class="font-headline font-bold text-2xl text-on-surface">Practitioner management</h2>
   <p class="text-on-surface-variant text-sm leading-relaxed">
-    Ajoutez, modifiez ou supprimez les psychologues présentés sur la plateforme.
+    Add, edit or delete the psychologists listed on the platform.
   </p>
 </section>
 
@@ -16,7 +16,7 @@
     class="w-full bg-primary text-on-primary p-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
   >
     <span class="material-symbols-outlined">add</span>
-    <span class="font-headline font-bold">Nouveau psychologue</span>
+    <span class="font-headline font-bold">New psychologist</span>
   </button>
 </section>
 
@@ -26,69 +26,69 @@
 <div id="form-modal" class="fixed inset-0 z-[60] bg-on-surface/40 backdrop-blur-sm hidden items-end sm:items-center justify-center px-4">
   <div class="bg-surface-container-lowest w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto space-y-4">
     <div class="flex items-center justify-between">
-      <h3 id="form-title" class="font-headline font-bold text-xl text-on-surface">Nouveau praticien</h3>
+      <h3 id="form-title" class="font-headline font-bold text-xl text-on-surface">New practitioner</h3>
       <button id="close-form" class="material-symbols-outlined text-on-surface-variant cursor-pointer">close</button>
     </div>
     <form id="psy-form" class="space-y-3">
       <input type="hidden" name="id" />
       {% set field_classes = "w-full p-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/40 text-on-surface" %}
       <label class="block">
-        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Nom</span>
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Name</span>
         <input name="name" required class="{{ field_classes }} mt-1" />
       </label>
       <label class="block">
-        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Titre / Spécialisation principale</span>
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Title / Main specialization</span>
         <input name="title" class="{{ field_classes }} mt-1" />
       </label>
       <label class="block">
-        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Spécialités (séparées par des virgules)</span>
-        <input name="specialties" class="{{ field_classes }} mt-1" placeholder="Stress, Anxiété, Burnout" />
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Specialties (comma-separated)</span>
+        <input name="specialties" class="{{ field_classes }} mt-1" placeholder="Stress, Anxiety, Burnout" />
       </label>
       <label class="block">
-        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Compétences / Approches</span>
-        <input name="skills" class="{{ field_classes }} mt-1" placeholder="TCC, Pleine conscience, EMDR" />
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Skills / Approaches</span>
+        <input name="skills" class="{{ field_classes }} mt-1" placeholder="CBT, Mindfulness, EMDR" />
       </label>
       <label class="block">
         <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Bio</span>
         <textarea name="bio" rows="4" class="{{ field_classes }} mt-1"></textarea>
       </label>
       <label class="block">
-        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">URL photo</span>
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Photo URL</span>
         <input name="image_url" class="{{ field_classes }} mt-1" />
       </label>
       <div class="grid grid-cols-2 gap-3">
         <label class="block">
-          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Note (0-5)</span>
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Rating (0-5)</span>
           <input name="rating" type="number" step="0.1" min="0" max="5" class="{{ field_classes }} mt-1" />
         </label>
         <label class="block">
-          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Avis</span>
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Reviews</span>
           <input name="reviews_count" type="number" min="0" class="{{ field_classes }} mt-1" />
         </label>
         <label class="block">
-          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Prochain créneau</span>
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Next slot</span>
           <input name="next_available" class="{{ field_classes }} mt-1" placeholder="14:00" />
         </label>
         <label class="block">
-          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Années d'expérience</span>
+          <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Years of experience</span>
           <input name="experience_years" type="number" min="0" class="{{ field_classes }} mt-1" />
         </label>
       </div>
       <label class="block">
-        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Langues (séparées par des virgules)</span>
-        <input name="languages" class="{{ field_classes }} mt-1" placeholder="Français, Anglais" />
+        <span class="text-xs font-label text-on-surface-variant uppercase tracking-wider">Languages (comma-separated)</span>
+        <input name="languages" class="{{ field_classes }} mt-1" placeholder="English, French" />
       </label>
       <div class="flex items-center gap-4">
         <label class="flex items-center gap-2">
           <input type="checkbox" name="verified" class="rounded text-primary" />
-          <span class="text-sm">Vérifié</span>
+          <span class="text-sm">Verified</span>
         </label>
         <label class="flex items-center gap-2">
           <input type="checkbox" name="available_today" class="rounded text-primary" checked />
-          <span class="text-sm">Disponible aujourd'hui</span>
+          <span class="text-sm">Available today</span>
         </label>
       </div>
-      <button type="submit" class="w-full bg-primary text-on-primary p-3 rounded-xl font-headline font-bold mt-2">Enregistrer</button>
+      <button type="submit" class="w-full bg-primary text-on-primary p-3 rounded-xl font-headline font-bold mt-2">Save</button>
     </form>
   </div>
 </div>
@@ -112,7 +112,7 @@
     const items = await r.json();
     if (!items.length) {
       listRoot.innerHTML =
-        '<p class="text-sm text-on-surface-variant">Aucun praticien enregistré.</p>';
+        '<p class="text-sm text-on-surface-variant">No practitioner registered.</p>';
       return;
     }
     listRoot.innerHTML = items
@@ -160,7 +160,7 @@
     form.reset();
     form.elements["id"].value = "";
     form.elements["available_today"].checked = true;
-    openModal("Nouveau praticien");
+    openModal("New practitioner");
   });
 
   document.getElementById("close-form").addEventListener("click", closeModal);
@@ -186,11 +186,11 @@
     form.elements["languages"].value = (p.languages || []).join(", ");
     form.elements["verified"].checked = !!p.verified;
     form.elements["available_today"].checked = !!p.available_today;
-    openModal("Modifier le praticien");
+    openModal("Edit practitioner");
   }
 
   async function removeOne(id) {
-    if (!confirm("Supprimer ce praticien ?")) return;
+    if (!confirm("Delete this practitioner?")) return;
     await fetch("/api/psychologists/" + id, { method: "DELETE" });
     loadList();
   }
@@ -229,7 +229,7 @@
     });
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
-      alert("Erreur : " + (err.error || r.statusText));
+      alert("Error: " + (err.error || r.statusText));
       return;
     }
     closeModal();

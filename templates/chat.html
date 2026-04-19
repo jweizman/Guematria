@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% set active = 'chat' %}
-{% block title %}The Serene Path - Échanger{% endblock %}
+{% block title %}The Serene Path - Chat{% endblock %}
 
 {% block main %}
 <section class="space-y-3">
-  <h2 class="font-headline font-bold text-2xl text-on-surface">Parlez-nous de vous</h2>
+  <h2 class="font-headline font-bold text-2xl text-on-surface">Tell us about yourself</h2>
   <p class="text-on-surface-variant text-sm leading-relaxed">
-    Décrivez ce que vous traversez en quelques phrases. Nous vous orientons vers les
-    psychologues les plus à même de vous accompagner.
+    Describe what you're going through in a few sentences. We'll match you with the
+    psychologists best suited to support you.
   </p>
 </section>
 
@@ -18,7 +18,7 @@
     <textarea
       id="chat-input"
       rows="2"
-      placeholder="Je me sens stressé(e) depuis quelques semaines…"
+      placeholder="I've been feeling stressed for a few weeks…"
       class="flex-1 p-4 bg-surface-container-highest border-none rounded-xl focus:ring-2 focus:ring-primary/40 placeholder:text-on-surface-variant/50 text-on-surface resize-none"
     ></textarea>
     <button
@@ -62,7 +62,7 @@
     if (!items.length) return;
     const heading = document.createElement("h3");
     heading.className = "font-headline font-bold text-xl text-on-surface mt-4";
-    heading.textContent = "Praticiens recommandés";
+    heading.textContent = "Recommended practitioners";
     matchesRoot.appendChild(heading);
     items.forEach((p) => {
       const card = document.createElement("div");
@@ -79,7 +79,7 @@
             <h4 class="font-headline font-bold text-base text-on-surface">${escapeHtml(p.name)}</h4>
             ${p.verified
               ? `<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>VÉRIFIÉ
+                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>VERIFIED
                 </span>`
               : ""}
           </div>
@@ -89,7 +89,7 @@
             : ""}
           ${p.next_available
             ? `<p class="flex items-center gap-1 text-xs text-primary mt-2">
-                <span class="material-symbols-outlined text-sm">schedule</span> Prochain créneau : ${escapeHtml(p.next_available)}
+                <span class="material-symbols-outlined text-sm">schedule</span> Next slot: ${escapeHtml(p.next_available)}
               </p>`
             : ""}
         </div>`;
@@ -108,7 +108,7 @@
     const thinking = document.createElement("div");
     thinking.className =
       "max-w-[85%] mr-auto bg-surface-container-low text-on-surface-variant px-4 py-3 rounded-xl rounded-bl-sm italic";
-    thinking.textContent = "Recherche du praticien le plus adapté…";
+    thinking.textContent = "Finding the best-suited practitioner…";
     messagesRoot.appendChild(thinking);
 
     try {
@@ -120,14 +120,14 @@
       const data = await r.json();
       thinking.remove();
       if (data.error) {
-        appendBubble("assistant", "Désolé, une erreur est survenue : " + data.error);
+        appendBubble("assistant", "Sorry, an error occurred: " + data.error);
         return;
       }
-      appendBubble("assistant", data.reply || "Voici quelques suggestions.");
+      appendBubble("assistant", data.reply || "Here are a few suggestions.");
       renderMatches(data.matches || []);
     } catch (err) {
       thinking.remove();
-      appendBubble("assistant", "Erreur réseau : " + err.message);
+      appendBubble("assistant", "Network error: " + err.message);
     }
   });
 </script>

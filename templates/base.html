@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="light" lang="fr">
+<html class="light" lang="en">
 <head>
 <meta charset="utf-8" />
 <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -111,15 +111,15 @@
   <div class="flex justify-around items-center h-20 w-full max-w-lg mx-auto px-4">
     <a href="{{ url_for('index') }}" class="flex flex-col items-center justify-center {% if active == 'home' %}bg-[#376767]/10 text-[#376767]{% else %}text-[#31332f]/50 hover:text-[#376767]{% endif %} rounded-2xl px-5 py-2 active:scale-90 transition-transform cursor-pointer">
       <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' {% if active == 'home' %}1{% else %}0{% endif %};">home_health</span>
-      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Accueil</span>
+      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Home</span>
     </a>
     <a href="{{ url_for('chat_page') }}" class="flex flex-col items-center justify-center {% if active == 'chat' %}bg-[#376767]/10 text-[#376767]{% else %}text-[#31332f]/50 hover:text-[#376767]{% endif %} rounded-2xl px-5 py-2 active:scale-90 transition-transform cursor-pointer">
       <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' {% if active == 'chat' %}1{% else %}0{% endif %};">forum</span>
-      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Échanger</span>
+      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Chat</span>
     </a>
     <a href="{{ url_for('admin_page') }}" class="flex flex-col items-center justify-center {% if active == 'admin' %}bg-[#376767]/10 text-[#376767]{% else %}text-[#31332f]/50 hover:text-[#376767]{% endif %} rounded-2xl px-5 py-2 active:scale-90 transition-transform cursor-pointer">
       <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' {% if active == 'admin' %}1{% else %}0{% endif %};">manage_accounts</span>
-      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Gestion</span>
+      <span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Admin</span>
     </a>
   </div>
 </nav>

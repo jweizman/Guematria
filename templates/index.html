@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set active = 'home' %}
-{% block title %}The Serene Path - Accueil{% endblock %}
+{% block title %}The Serene Path - Home{% endblock %}
 
 {% block main %}
 <!-- Emergency Section -->
@@ -8,8 +8,8 @@
   <a href="{{ url_for('chat_page') }}" class="block">
     <button class="w-full bg-error-container text-on-error-container p-5 rounded-xl flex items-center justify-between shadow-[0_10px_30px_rgba(49,51,47,0.06)] active:scale-95 transition-transform duration-200">
       <div class="flex flex-col items-start text-left">
-        <span class="font-headline font-bold text-lg">Besoin d'aide maintenant ?</span>
-        <span class="font-body text-sm opacity-90">Consultation immédiate disponible</span>
+        <span class="font-headline font-bold text-lg">Need help now?</span>
+        <span class="font-body text-sm opacity-90">Immediate consultation available</span>
       </div>
       <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">emergency_home</span>
     </button>
@@ -22,7 +22,7 @@
     <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
       <span class="material-symbols-outlined text-on-surface-variant/60">search</span>
     </div>
-    <input id="search-input" class="w-full h-14 pl-12 pr-4 bg-surface-container-highest border-none rounded-xl focus:ring-2 focus:ring-primary/40 placeholder:text-on-surface-variant/50 text-on-surface transition-all" placeholder="Comment vous sentez-vous ?" type="text" />
+    <input id="search-input" class="w-full h-14 pl-12 pr-4 bg-surface-container-highest border-none rounded-xl focus:ring-2 focus:ring-primary/40 placeholder:text-on-surface-variant/50 text-on-surface transition-all" placeholder="How are you feeling?" type="text" />
   </div>
 </section>
 
@@ -34,11 +34,11 @@
 <!-- Featured Psychologists -->
 <section class="space-y-6">
   <div class="flex items-center justify-between">
-    <h2 class="font-headline font-bold text-2xl text-on-surface">Disponibles aujourd'hui</h2>
-    <a href="#" id="toggle-all" class="text-primary font-label text-sm font-semibold cursor-pointer">Voir tout</a>
+    <h2 class="font-headline font-bold text-2xl text-on-surface">Available today</h2>
+    <a href="#" id="toggle-all" class="text-primary font-label text-sm font-semibold cursor-pointer">View all</a>
   </div>
   <div id="psy-list" class="grid grid-cols-1 gap-4">
-    <p class="text-sm text-on-surface-variant">Chargement…</p>
+    <p class="text-sm text-on-surface-variant">Loading…</p>
   </div>
 </section>
 
@@ -48,11 +48,11 @@
     <span class="material-symbols-outlined text-6xl">lightbulb</span>
   </div>
   <div class="relative z-10 space-y-3">
-    <span class="text-tertiary font-label font-bold text-xs tracking-widest uppercase">Le saviez-vous ?</span>
-    <h4 class="font-headline font-bold text-xl text-on-surface leading-tight">La respiration carrée apaise votre système nerveux en 60 secondes.</h4>
-    <p class="text-on-surface-variant text-sm leading-relaxed max-w-[85%]">Inspirez 4 secondes, retenez 4 secondes, expirez 4 secondes, retenez 4 secondes. Répétez 3 fois.</p>
+    <span class="text-tertiary font-label font-bold text-xs tracking-widest uppercase">Did you know?</span>
+    <h4 class="font-headline font-bold text-xl text-on-surface leading-tight">Box breathing can calm your nervous system in 60 seconds.</h4>
+    <p class="text-on-surface-variant text-sm leading-relaxed max-w-[85%]">Inhale for 4 seconds, hold for 4 seconds, exhale for 4 seconds, hold for 4 seconds. Repeat 3 times.</p>
     <a href="{{ url_for('chat_page') }}" class="mt-2 text-primary font-bold text-sm flex items-center gap-2 group">
-      Essayer maintenant
+      Try now
       <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
     </a>
   </div>
@@ -83,7 +83,7 @@
         (isActive
           ? "bg-primary text-on-primary"
           : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest");
-      btn.textContent = label === "all" ? "Tout" : label;
+      btn.textContent = label === "all" ? "All" : label;
       btn.onclick = () => {
         activeFilter = label;
         renderFilters();
@@ -107,7 +107,7 @@
   function renderList(items) {
     const root = document.getElementById("psy-list");
     if (!items.length) {
-      root.innerHTML = '<p class="text-sm text-on-surface-variant">Aucun praticien trouvé.</p>';
+      root.innerHTML = '<p class="text-sm text-on-surface-variant">No practitioner found.</p>';
       return;
     }
     root.innerHTML = items
@@ -125,7 +125,7 @@
             <h3 class="font-headline font-bold text-lg text-on-surface">${escapeHtml(p.name)}</h3>
             ${p.verified
               ? `<div class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>VÉRIFIÉ
+                  <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>VERIFIED
                 </div>`
               : ""}
           </div>
@@ -162,7 +162,7 @@
   document.getElementById("toggle-all").addEventListener("click", (e) => {
     e.preventDefault();
     onlyAvailable = !onlyAvailable;
-    e.target.textContent = onlyAvailable ? "Voir tout" : "Disponibles seulement";
+    e.target.textContent = onlyAvailable ? "View all" : "Available only";
     loadPsychologists();
   });
 
