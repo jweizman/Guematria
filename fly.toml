@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for app-proud-fog-976 on 2026-04-20T13:12:16Z
+# fly.toml app configuration file generated for guematria on 2026-04-20T13:15:41Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'app-proud-fog-976'
-primary_region = 'iad'
+app = 'guematria'
+primary_region = 'ams'
 
 [build]
 
